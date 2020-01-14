@@ -2,8 +2,8 @@ class GithubCommitsController < ApplicationController
   
   unloadable
    
-  skip_before_filter :check_if_login_required
-  skip_before_filter :verify_authenticity_token
+  skip_before_action :check_if_login_required
+  skip_before_action :verify_authenticity_token
   
   before_action :verify_signature?
   
@@ -61,13 +61,13 @@ class GithubCommitsController < ApplicationController
   end
 
   def verify_signature?
-    if request.env['HTTP_X_HUB_SIGNATURE'].blank? || ENV["GITHUB_SECRET_TOKEN"].blank?
+    if request.headers['X-Hub-Signature'].blank? || ENV["GITHUB_SECRET_TOKEN"].blank?
       render json: {success: false},status: 500
     else
       request.body.rewind
       payload_body = request.body.read
       signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), ENV["GITHUB_SECRET_TOKEN"], payload_body)
-      render json: {success: false},status: 500 unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE'])
+      render json: {success: false},status: 500 unless Rack::Utils.secure_compare(signature, request.headers['X-Hub-Signature'])
     end
   end
 
